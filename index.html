@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SITE Terminal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  background: #0b0b0b;
+  color: #00ff88;
+  font-family: monospace;
+  padding: 15px;
+}
+#terminal {
+  background: #000;
+  border: 1px solid #00ff88;
+  border-radius: 8px;
+  padding: 10px;
+  height: 70vh;
+  overflow-y: auto;
+}
+#input {
+  width: 100%;
+  background: black;
+  color: #00ff88;
+  border: none;
+  outline: none;
+  font-family: monospace;
+  font-size: 16px;
+}
+.line { margin-bottom: 6px; }
+.ok { color: #00ffff; }
+.err { color: #ff5555; }
+</style>
+</head>
+
+<body>
+
+<div id="terminal">
+  <div class="line">SITE Terminal</div>
+  <div class="line">Comando disponível: <b>/logins</b></div>
+</div>
+
+<input id="input" placeholder="> digite um comando e Enter">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<script>
+const terminal = document.getElementById("terminal");
+const input = document.getElementById("input");
+
+function print(text, cls="") {
+  terminal.innerHTML += `<div class="line ${cls}">${text}</div>`;
+  terminal.scrollTop = terminal.scrollHeight;
+}
+
+input.addEventListener("keydown", async (e) => {
+  if (e.key === "Enter") {
+    const cmd = input.value.trim();
+    input.value = "";
+    print(`> ${cmd}`);
+
+    if (cmd === "/logins") {
+      await carregarLogins();
+    } else {
+      print("Comando não reconhecido.", "err");
+    }
+  }
+});
+
+async function carregarLogins() {
+  try {
+    print("Lendo pasta SITE/ ...");
+    const res = await fetch("logins.txt");
+    if (!res.ok) throw new Error();
+
+    const conteudo = await res.text();
+
+    print("📁 SITE/");
+    print(" └─ logins.txt", "ok");
+    print("Conteúdo:", "ok");
+    conteudo.split("\n").forEach(l => print("   " + l));
+
+    gerarDownload(conteudo);
+  } catch {
+    print("Erro ao carregar logins.txt", "err");
+    print("Abra o site via HTTP (GitHub Pages).", "err");
+  }
+}
+
+function gerarDownload(conteudo) {
+  const zip = new JSZip();
+  const pasta = zip.folder("SITE");
+  pasta.file("logins.txt", conteudo);
+
+  zip.generateAsync({ type: "blob" }).then(blob => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "SITE.zip";
+    a.click();
+    print("Download disponível: SITE.zip", "ok");
+  });
+}
+</script>
+
+</body>
+</html>
